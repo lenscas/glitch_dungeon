@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 quicksilver = "*"
 mergui = "*"
+pathfinding = "*"
+rand = { version="*", features = ["stdweb"] }
