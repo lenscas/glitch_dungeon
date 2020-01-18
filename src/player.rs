@@ -25,10 +25,6 @@ pub struct Player {
 }
 impl Player {
 	pub fn new(location: Vector) -> Self {
-		let cell_lock = (
-			location.x as usize / CELL_SIZE,
-			location.y as usize / CELL_SIZE,
-		);
 		Self {
 			location: Moveable::new(location),
 			speed: 10.,
