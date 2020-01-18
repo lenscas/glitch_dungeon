@@ -132,7 +132,7 @@ impl State for MainState {
             )?);
         }
 
-        let player = Player::new(loc);
+        let player = Player::new(loc, &font, &style)?;
         let rendered_health = font.render(&player.health.to_string(), &style)?;
         Ok(Self {
             grid,
@@ -229,9 +229,23 @@ impl State for MainState {
         match action {
             Action::None => {}
             Action::NextScreen => self.reset()?,
-            Action::Shoot => {
-                let bullet = Bullet::new(self.player.location.location, 15., self.player.dir);
-                self.bullets.push(bullet)
+            Action::Shoot(gun) => {
+                let speed = gun.speed;
+                let damage = gun.damage;
+                let bullets: Vec<_> = gun
+                    .patterns
+                    .into_iter()
+                    .map(|v| {
+                        Bullet::new_with_pattern(
+                            self.player.location.location,
+                            speed,
+                            self.player.dir,
+                            v,
+                            damage,
+                        )
+                    })
+                    .collect();
+                self.bullets.extend(bullets);
             }
         }
         let mut bullets = Vec::new();
@@ -247,10 +261,10 @@ impl State for MainState {
         for mut monster in self.monsters.drain(0..self.monsters.len()) {
             for bullet in &bullets {
                 if bullet.location.cell_loc == monster.location.cell_loc {
-                    monster.get_damage(1, &self.font, &self.default_style)?;
+                    monster.get_damage(bullet.damage, &self.font, &self.default_style)?;
                 }
             }
-            if monster.health > 0 {
+            if monster.is_alive() {
                 if monster.location.cell_loc == self.player.location.cell_loc
                     && self.player.invis_timer == 0
                 {
@@ -269,7 +283,7 @@ impl State for MainState {
         if self.player.health <= 0 {
             self.reset()?;
             let loc = self.player.location.clone();
-            self.player = Player::new(Vector::new(0, 0));
+            self.player = Player::new(Vector::new(0, 0), &self.font, &self.default_style)?;
             self.player.location = loc;
             self.rendered_health = self
                 .font
