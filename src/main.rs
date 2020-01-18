@@ -157,7 +157,7 @@ impl State for MainState {
                 } else if tile.is_end {
                     Color::GREEN
                 } else {
-                    Color::MAGENTA
+                    Color::from_rgba(128, 64, 128, 1.)
                 }
             } else {
                 Color::BLACK
