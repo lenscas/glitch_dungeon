@@ -1,5 +1,4 @@
 use crate::grid::{Dir, Tile};
-use quicksilver::geom::Vector;
 use rand::Rng;
 use std::collections::HashMap;
 
@@ -109,6 +108,11 @@ impl Grid {
 		};
 		(y * length) + x
 	}
+	fn calc_cell_unbound(point: &(usize, usize), length: usize, height: usize) -> usize {
+		let x = point.0;
+		let y = point.1;
+		(y * length) + x
+	}
 	pub fn calc_pos_from_index(key: usize, length: usize, height: usize) -> (usize, usize) {
 		let res = ((key % length) as usize, (key / length) as usize);
 		res
@@ -137,5 +141,14 @@ impl Grid {
 			})
 			.map(|(loc, v)| (loc, v.clone()))
 			.collect()
+	}
+	pub fn get_cell(&self, cell: (usize, usize)) -> Option<((usize, usize), Tile)> {
+		let index = Grid::calc_cell_unbound(&cell, self.length, self.height);
+		self.tiles.get(index).map(|v| {
+			(
+				Grid::calc_pos_from_index(index, self.length, self.height),
+				v.clone(),
+			)
+		})
 	}
 }
