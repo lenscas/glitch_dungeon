@@ -155,12 +155,12 @@ impl State for MainState {
                 if tile.is_start {
                     Color::PURPLE
                 } else if tile.is_end {
-                    Color::RED
-                } else {
                     Color::GREEN
+                } else {
+                    Color::MAGENTA
                 }
             } else {
-                Color::BLUE
+                Color::BLACK
             };
             let rec = Rectangle::new(loc, (32, 32));
             window.draw_ex(&rec, Col(to_draw), Transform::IDENTITY, z);
@@ -174,7 +174,7 @@ impl State for MainState {
             window.draw_ex(
                 &Rectangle::new(screen_pos.clone(), (bullet.size as f32, bullet.size as f32))
                     .with_center(screen_pos),
-                Col(Color::MAGENTA),
+                Col(Color::BLUE),
                 Transform::IDENTITY,
                 z,
             );
