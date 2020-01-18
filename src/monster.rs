@@ -1,6 +1,10 @@
 use crate::grid::grid::Grid;
 use crate::moveable::Moveable;
 use quicksilver::geom::Vector;
+use quicksilver::graphics::Font;
+use quicksilver::graphics::FontStyle;
+use quicksilver::graphics::Image;
+use quicksilver::Result;
 use rand::Rng;
 
 pub struct Monster {
@@ -9,20 +13,28 @@ pub struct Monster {
 	pub health: isize,
 	pub damage: isize,
 	pub speed: f32,
+	pub rendered_health: Image,
 }
 impl Monster {
-	pub fn new(location: Vector) -> Self {
-		Self {
+	pub fn new(location: Vector, font: &Font, style: &FontStyle) -> Result<Self> {
+		let rendered_health = font.render("10", style)?;
+		Ok(Self {
 			location: Moveable::new(location),
 			size: 15,
 			health: 10,
 			damage: 10,
 			speed: 5.,
-		}
+			rendered_health,
+		})
 	}
 	pub fn move_a_bit(&mut self, grid: &Grid) {
 		let mut rng = rand::thread_rng();
 		self.location
 			.move_some(rng.gen(), self.speed, grid, self.size);
+	}
+	pub fn get_damage(&mut self, damage: isize, font: &Font, style: &FontStyle) -> Result<bool> {
+		self.health -= damage;
+		self.rendered_health = font.render(&self.health.to_string(), style)?;
+		Ok(self.health > 0)
 	}
 }

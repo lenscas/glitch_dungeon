@@ -1,12 +1,13 @@
 use crate::bullet::Bullet;
 use crate::grid::grid::Grid;
-use crate::grid::tile::Tile;
 use crate::monster::Monster;
 use crate::player::Action;
 use crate::player::Player;
+use quicksilver::graphics::Image;
+use quicksilver::prelude::Background::Img;
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Color},
+    graphics::{Background::Col, Color, Font, FontStyle},
     lifecycle::{run, Event, Settings, State, Window},
     Result,
 };
@@ -15,6 +16,7 @@ use rand::seq::SliceRandom;
 const CELL_SIZE: usize = 32;
 const PLAYER_SIZE: usize = 16;
 const GRID_SIZE: usize = 30;
+
 mod bullet;
 mod grid;
 mod monster;
@@ -24,9 +26,11 @@ mod player;
 pub struct MainState {
     grid: Grid,
     player: Player,
-    drawn_grid: Vec<(Rectangle, Tile)>,
     bullets: Vec<Bullet>,
     monsters: Vec<Monster>,
+    font: Font,
+    rendered_health: Image,
+    default_style: FontStyle,
 }
 impl MainState {
     fn calc_start(cam: f32, line_size: usize) -> usize {
@@ -68,7 +72,7 @@ impl MainState {
         let end_y = 1 + start_y + height;
         ((start_x, start_y), (end_x, end_y))
     }
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> Result<()> {
         self.grid = Grid::new(GRID_SIZE, GRID_SIZE);
         self.bullets = Vec::new();
         let start = self.grid.start;
@@ -76,6 +80,8 @@ impl MainState {
             (start.0 * CELL_SIZE) as i32,
             (start.1 * CELL_SIZE) as i32,
         ));
+
+        self.player.invis_timer = 30;
         let possible_spawns: Vec<_> = self
             .grid
             .tiles
@@ -89,16 +95,21 @@ impl MainState {
         let mut rng = rand::thread_rng();
         for _ in 0..amount {
             let chosen = possible_spawns.choose(&mut rng).unwrap();
-            monsters.push(Monster::new(Vector::new(
-                (chosen.0 * CELL_SIZE) as i32,
-                (chosen.1 * CELL_SIZE) as i32,
-            )));
+            monsters.push(Monster::new(
+                Vector::new((chosen.0 * CELL_SIZE) as i32, (chosen.1 * CELL_SIZE) as i32),
+                &self.font,
+                &self.default_style,
+            )?);
         }
         self.monsters = monsters;
+        Ok(())
     }
 }
 impl State for MainState {
     fn new() -> Result<Self> {
+        let font = Font::from_bytes(include_bytes!("../static/font.ttf").to_vec())?;
+        let style = FontStyle::new(100.0, Color::WHITE);
+
         let grid = Grid::new(GRID_SIZE, GRID_SIZE);
         let start = grid.start;
         let loc = Vector::new((start.0 * CELL_SIZE) as i32, (start.1 * CELL_SIZE) as i32);
@@ -114,17 +125,23 @@ impl State for MainState {
         let mut rng = rand::thread_rng();
         for _ in 0..amount {
             let chosen = possible_spawns.choose(&mut rng).unwrap();
-            monsters.push(Monster::new(Vector::new(
-                (chosen.0 * CELL_SIZE) as i32,
-                (chosen.1 * CELL_SIZE) as i32,
-            )));
+            monsters.push(Monster::new(
+                Vector::new((chosen.0 * CELL_SIZE) as i32, (chosen.1 * CELL_SIZE) as i32),
+                &font,
+                &style,
+            )?);
         }
+
+        let player = Player::new(loc);
+        let rendered_health = font.render(&player.health.to_string(), &style)?;
         Ok(Self {
             grid,
-            player: Player::new(loc),
-            drawn_grid: Vec::new(),
+            player,
             bullets: Vec::new(),
             monsters: monsters,
+            font,
+            rendered_health,
+            default_style: style,
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
@@ -132,29 +149,23 @@ impl State for MainState {
         let (start, end) = self.get_outer_cell_points();
         let part = self.grid.get_part(start, end);
         let mut z = 0;
-        self.drawn_grid = part
-            .into_iter()
-            .enumerate()
-            .map(|(_, tile)| {
-                let (loc2, tile) = tile;
-                let loc = self.player.grid_to_screen(&(loc2.0 as f32, loc2.1 as f32));
-                let to_draw = if tile.can_move {
-                    if tile.is_start {
-                        Color::PURPLE
-                    } else if tile.is_end {
-                        Color::RED
-                    } else {
-                        Color::GREEN
-                    }
+        part.into_iter().for_each(|(loc2, tile)| {
+            let loc = self.player.grid_to_screen(&(loc2.0 as f32, loc2.1 as f32));
+            let to_draw = if tile.can_move {
+                if tile.is_start {
+                    Color::PURPLE
+                } else if tile.is_end {
+                    Color::RED
                 } else {
-                    Color::BLUE
-                };
-                let rec = Rectangle::new(loc, (32, 32));
-                window.draw_ex(&rec, Col(to_draw), Transform::IDENTITY, z);
-                z = z + 1;
-                (rec, tile)
-            })
-            .collect();
+                    Color::GREEN
+                }
+            } else {
+                Color::BLUE
+            };
+            let rec = Rectangle::new(loc, (32, 32));
+            window.draw_ex(&rec, Col(to_draw), Transform::IDENTITY, z);
+            z = z + 1;
+        });
         self.bullets.iter().for_each(|bullet| {
             let screen_pos = self.player.grid_to_screen(&(
                 bullet.location.location.x / CELL_SIZE as f32,
@@ -174,25 +185,40 @@ impl State for MainState {
                 monster.location.location.x / CELL_SIZE as f32,
                 monster.location.location.y / CELL_SIZE as f32,
             ));
+            let mut monster_rec = Rectangle::new(
+                screen_pos.clone(),
+                (monster.size as f32, monster.size as f32),
+            )
+            .with_center(screen_pos);
+            window.draw_ex(&monster_rec, Col(Color::INDIGO), Transform::IDENTITY, z);
+            monster_rec.pos.y += 20.;
+            monster_rec.size.y = 15.;
+            monster_rec.size.x = 20.;
             window.draw_ex(
-                &Rectangle::new(
-                    screen_pos.clone(),
-                    (monster.size as f32, monster.size as f32),
-                )
-                .with_center(screen_pos),
-                Col(Color::INDIGO),
+                &monster_rec,
+                Img(&monster.rendered_health),
                 Transform::IDENTITY,
                 z,
             );
             z = z + 1;
         });
+        let mut player_rec = self.player.get_rectangle();
         window.draw_ex(
-            &self.player.get_rectangle(),
+            &player_rec,
             Col(if self.player.invis_timer == 0 {
                 Color::WHITE
             } else {
                 Color::ORANGE
             }),
+            Transform::IDENTITY,
+            z,
+        );
+        player_rec.pos.y += 20.;
+        player_rec.size.y = 15.;
+        player_rec.size.x = 20.;
+        window.draw_ex(
+            &player_rec,
+            Img(&self.rendered_health),
             Transform::IDENTITY,
             z,
         );
@@ -202,7 +228,7 @@ impl State for MainState {
         let action = self.player.update(window, &self.grid);
         match action {
             Action::None => {}
-            Action::NextScreen => self.reset(),
+            Action::NextScreen => self.reset()?,
             Action::Shoot => {
                 let bullet = Bullet::new(self.player.location.location, 15., self.player.dir);
                 self.bullets.push(bullet)
@@ -221,7 +247,7 @@ impl State for MainState {
         for mut monster in self.monsters.drain(0..self.monsters.len()) {
             for bullet in &bullets {
                 if bullet.location.cell_loc == monster.location.cell_loc {
-                    monster.health -= 1;
+                    monster.get_damage(1, &self.font, &self.default_style)?;
                 }
             }
             if monster.health > 0 {
@@ -229,6 +255,9 @@ impl State for MainState {
                     && self.player.invis_timer == 0
                 {
                     self.player.health -= monster.damage;
+                    self.rendered_health = self
+                        .font
+                        .render(&self.player.health.to_string(), &self.default_style)?;
                     self.player.invis_timer = 30;
                     if self.player.health <= 0 {
                         break;
@@ -238,17 +267,19 @@ impl State for MainState {
             }
         }
         if self.player.health <= 0 {
-            self.reset();
+            self.reset()?;
             let loc = self.player.location.clone();
             self.player = Player::new(Vector::new(0, 0));
             self.player.location = loc;
+            self.rendered_health = self
+                .font
+                .render(&self.player.health.to_string(), &self.default_style)?;
         } else {
             if self.player.invis_timer > 0 {
                 self.player.invis_timer -= 1;
             }
             self.monsters = monsters;
             self.bullets = bullets;
-            self.player.invis_timer = 30;
         }
 
         Ok(())
