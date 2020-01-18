@@ -2,7 +2,7 @@ use crate::grid::grid::Grid;
 use crate::grid::tile::Tile;
 use crate::player::Player;
 use quicksilver::{
-    geom::{Rectangle, Shape, Transform, Vector},
+    geom::{Rectangle, Transform, Vector},
     graphics::{Background::Col, Color},
     lifecycle::{run, Event, Settings, State, Window},
     Result,
@@ -119,7 +119,7 @@ impl State for MainState {
         }
         Ok(())
     }
-    fn event(&mut self, event: &Event, _window: &mut Window) -> Result<()> {
+    fn event(&mut self, _event: &Event, _window: &mut Window) -> Result<()> {
         Ok(())
     }
 }
