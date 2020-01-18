@@ -188,7 +188,11 @@ impl State for MainState {
         });
         window.draw_ex(
             &self.player.get_rectangle(),
-            Col(Color::WHITE),
+            Col(if self.player.invis_timer == 0 {
+                Color::WHITE
+            } else {
+                Color::ORANGE
+            }),
             Transform::IDENTITY,
             z,
         );
@@ -221,8 +225,11 @@ impl State for MainState {
                 }
             }
             if monster.health > 0 {
-                if monster.location.cell_loc == self.player.location.cell_loc {
+                if monster.location.cell_loc == self.player.location.cell_loc
+                    && self.player.invis_timer == 0
+                {
                     self.player.health -= monster.damage;
+                    self.player.invis_timer = 30;
                     if self.player.health <= 0 {
                         break;
                     }
@@ -236,8 +243,12 @@ impl State for MainState {
             self.player = Player::new(Vector::new(0, 0));
             self.player.location = loc;
         } else {
+            if self.player.invis_timer > 0 {
+                self.player.invis_timer -= 1;
+            }
             self.monsters = monsters;
             self.bullets = bullets;
+            self.player.invis_timer = 30;
         }
 
         Ok(())

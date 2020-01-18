@@ -23,6 +23,7 @@ pub struct Player {
 	pub speed: f32,
 	pub dir: Dir,
 	pub health: isize,
+	pub invis_timer: usize,
 }
 impl Player {
 	pub fn new(location: Vector) -> Self {
@@ -31,6 +32,7 @@ impl Player {
 			speed: 10.,
 			dir: Dir::Up,
 			health: 100,
+			invis_timer: 30,
 		}
 	}
 	pub fn reset_location(&mut self, location: Vector) {
