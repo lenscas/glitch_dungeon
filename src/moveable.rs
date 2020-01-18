@@ -11,7 +11,7 @@ pub fn sub_save(first: f32, second: f32) -> f32 {
         first - second
     }
 }
-
+#[derive(Clone)]
 pub struct Moveable {
     pub location: Vector,
     pub cell_loc: (usize, usize),
