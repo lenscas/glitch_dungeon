@@ -2,7 +2,7 @@ use rand::distributions::Distribution;
 use rand::distributions::Standard;
 use rand::Rng;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Dir {
     Up,
     Down,

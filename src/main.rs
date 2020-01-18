@@ -1,8 +1,10 @@
+use crate::bullet::Bullet;
 use crate::grid::grid::Grid;
 use crate::grid::tile::Tile;
+use crate::player::Action;
 use crate::player::Player;
 use quicksilver::{
-    geom::{Rectangle, Transform, Vector},
+    geom::{Rectangle, Shape, Transform, Vector},
     graphics::{Background::Col, Color},
     lifecycle::{run, Event, Settings, State, Window},
     Result,
@@ -11,13 +13,16 @@ use quicksilver::{
 const CELL_SIZE: usize = 32;
 const PLAYER_SIZE: usize = 16;
 const GRID_SIZE: usize = 30;
+mod bullet;
 mod grid;
+mod moveable;
 mod player;
 
 pub struct MainState {
     grid: Grid,
     player: Player,
     drawn_grid: Vec<(Rectangle, Tile)>,
+    bullets: Vec<Bullet>,
 }
 impl MainState {
     fn calc_start(cam: f32, line_size: usize) -> usize {
@@ -44,7 +49,7 @@ impl MainState {
         let height = 600;
         let width = 800;
         let mid_point = {
-            let mut mid_point = self.player.location.clone();
+            let mut mid_point = self.player.location.location.clone();
             if mid_point.x < 0. {
                 mid_point.x = 0.;
             }
@@ -69,6 +74,7 @@ impl State for MainState {
             grid,
             player: Player::new(loc),
             drawn_grid: Vec::new(),
+            bullets: Vec::new(),
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
@@ -99,6 +105,20 @@ impl State for MainState {
                 (rec, tile)
             })
             .collect();
+        self.bullets.iter().for_each(|bullet| {
+            let screen_pos = self.player.grid_to_screen(&(
+                bullet.location.location.x / CELL_SIZE as f32,
+                bullet.location.location.y / CELL_SIZE as f32,
+            ));
+            window.draw_ex(
+                &Rectangle::new(screen_pos.clone(), (bullet.size as f32, bullet.size as f32))
+                    .with_center(screen_pos),
+                Col(Color::MAGENTA),
+                Transform::IDENTITY,
+                z,
+            );
+            z = z + 1;
+        });
         window.draw_ex(
             &self.player.get_rectangle(),
             Col(Color::WHITE),
@@ -108,15 +128,30 @@ impl State for MainState {
         Ok(())
     }
     fn update(&mut self, window: &mut Window) -> Result<()> {
-        let reached_end = self.player.update(window, &self.grid);
-        if reached_end {
-            self.grid = Grid::new(GRID_SIZE, GRID_SIZE);
-            let start = self.grid.start;
-            self.player.reset_location(Vector::new(
-                (start.0 * CELL_SIZE) as i32,
-                (start.1 * CELL_SIZE) as i32,
-            ));
+        let action = self.player.update(window, &self.grid);
+        match action {
+            Action::None => {}
+            Action::NextScreen => {
+                self.grid = Grid::new(GRID_SIZE, GRID_SIZE);
+                self.bullets = Vec::new();
+                let start = self.grid.start;
+                self.player.reset_location(Vector::new(
+                    (start.0 * CELL_SIZE) as i32,
+                    (start.1 * CELL_SIZE) as i32,
+                ));
+            }
+            Action::Shoot => {
+                let bullet = Bullet::new(self.player.location.location, 15., self.player.dir);
+                self.bullets.push(bullet)
+            }
         }
+        let mut bullets = Vec::new();
+        for mut bullet in self.bullets.drain(0..self.bullets.len()) {
+            if !bullet.update(&self.grid) {
+                bullets.push(bullet)
+            }
+        }
+        self.bullets = bullets;
         Ok(())
     }
     fn event(&mut self, _event: &Event, _window: &mut Window) -> Result<()> {
