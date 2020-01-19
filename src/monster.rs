@@ -1,5 +1,7 @@
 use crate::grid::grid::Grid;
+use crate::grid::Dir;
 use crate::moveable::Moveable;
+use crate::player::Player;
 use quicksilver::geom::Vector;
 use quicksilver::graphics::Font;
 use quicksilver::graphics::FontStyle;
@@ -33,13 +35,27 @@ impl Monster {
 			damage_cooldown: 0,
 		})
 	}
-	pub fn move_a_bit(&mut self, grid: &Grid) {
+	pub fn move_a_bit(&mut self, grid: &Grid, player: &Player) {
 		if self.damage_cooldown > 0 {
 			self.damage_cooldown -= 1;
 		}
 		let mut rng = rand::thread_rng();
-		self.location
-			.move_some(rng.gen(), self.speed, grid, self.size);
+		let dir = if rng.gen_range(0, 10) > 7 {
+			if self.location.cell_loc.0 > player.location.cell_loc.0 {
+				Dir::Left
+			} else if self.location.cell_loc.0 < player.location.cell_loc.0 {
+				Dir::Right
+			} else if self.location.cell_loc.1 > player.location.cell_loc.1 {
+				Dir::Up
+			} else if self.location.cell_loc.1 < player.location.cell_loc.1 {
+				Dir::Down
+			} else {
+				rng.gen()
+			}
+		} else {
+			rng.gen()
+		};
+		self.location.move_some(dir, self.speed, grid, self.size);
 	}
 	pub fn get_damage(&mut self, damage: isize, font: &Font, style: &FontStyle) -> Result<bool> {
 		if self.damage_cooldown > 0 {

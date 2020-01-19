@@ -348,7 +348,10 @@ impl State for MainState {
         }
         let bullets = bullets;
         let grid = &self.grid;
-        self.monsters.iter_mut().for_each(|v| v.move_a_bit(&grid));
+        let player = &self.player;
+        self.monsters
+            .iter_mut()
+            .for_each(|v| v.move_a_bit(&grid, player));
         let mut monsters = Vec::new();
         for mut monster in self.monsters.drain(0..self.monsters.len()) {
             for bullet in &bullets {
