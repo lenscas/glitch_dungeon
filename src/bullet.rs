@@ -22,10 +22,19 @@ impl Bullet {
 		let pattern = pattern
 			.iter()
 			.map(|v| dir - v)
-			.map(|v| if v < 0 { 3 + v } else { v })
+			.map(|v| {
+				if v < 0 {
+					v + 4
+				} else if v > 3 {
+					v - 4
+				} else {
+					v
+				}
+			})
 			.map(|v| v as u8)
 			.map(|v| v.into())
 			.collect();
+
 		Self {
 			location: Moveable::new_not_center(location),
 			speed,
