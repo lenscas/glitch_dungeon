@@ -122,10 +122,6 @@ impl Grid {
 		start: (usize, usize),
 		end: (usize, usize),
 	) -> Vec<((usize, usize), Tile)> {
-		let _to_start = Grid::calc_cell(&start, self.length, self.height);
-		let _to_end = Grid::calc_cell(&end, self.length, self.height);
-		//let first_split = self.tiles.split_at(to_start).1;
-		//let second_split = first_split.split_at(1 + to_end - to_start).0;
 		self.tiles
 			.iter()
 			.enumerate()
