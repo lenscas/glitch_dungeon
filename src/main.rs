@@ -1,6 +1,7 @@
 use crate::bullet::Bullet;
 use crate::grid::grid::Grid;
 use crate::monster::Monster;
+use crate::player::check_multiple_pressed;
 use crate::player::Action;
 use crate::player::Player;
 use crate::player::ShapeChoise;
@@ -10,6 +11,7 @@ use quicksilver::{
     geom::{Circle, Rectangle, Shape, Transform, Triangle, Vector},
     graphics::{Background::Col, Color, Font, FontStyle},
     lifecycle::{run, Event, Settings, State, Window},
+    prelude::Key,
     Result,
 };
 use rand::seq::SliceRandom;
@@ -32,6 +34,10 @@ pub struct MainState {
     font: Font,
     rendered_health: Image,
     default_style: FontStyle,
+    score: u64,
+    rendered_score: Image,
+    is_dead: bool,
+    rendered_dead_text: Image,
 }
 impl MainState {
     fn calc_start(cam: f32, line_size: usize) -> usize {
@@ -135,6 +141,10 @@ impl State for MainState {
 
         let player = Player::new(loc, &font, &style)?;
         let rendered_health = font.render(&player.health.to_string(), &style)?;
+        let rendered_score = font.render("0", &style)?;
+        let rendered_dead_text =
+            font.render("You died, press Esc to continue\nYour score:", &style)?;
+
         Ok(Self {
             grid,
             player,
@@ -143,10 +153,29 @@ impl State for MainState {
             font,
             rendered_health,
             default_style: style,
+            rendered_score,
+            is_dead: false,
+            score: 0,
+            rendered_dead_text,
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::BLACK)?;
+        if self.is_dead {
+            window.draw_ex(
+                &Rectangle::new((200, 150), (380, 200)),
+                Img(&self.rendered_dead_text),
+                Transform::IDENTITY,
+                2,
+            );
+            window.draw_ex(
+                &Rectangle::new((350, 350), (100, 100)),
+                Img(&self.rendered_score),
+                Transform::IDENTITY,
+                1,
+            );
+            return Ok(());
+        }
         let (start, end) = self.get_outer_cell_points();
         let part = self.grid.get_part(start, end);
         let mut z = 0;
@@ -277,9 +306,18 @@ impl State for MainState {
         Ok(())
     }
     fn update(&mut self, window: &mut Window) -> Result<()> {
-        let action = self
-            .player
-            .update(window, &mut self.grid, &self.font, &self.default_style)?;
+        if self.is_dead {
+            let board = window.keyboard();
+            if check_multiple_pressed(&board, &[Key::Escape, Key::Return]) {
+                self.is_dead = false;
+                self.score = 0;
+            }
+            return Ok(());
+        }
+        let (points, action) =
+            self.player
+                .update(window, &mut self.grid, &self.font, &self.default_style)?;
+        self.score += points;
         match action {
             Action::None => {}
             Action::NextScreen => self.reset()?,
@@ -332,6 +370,8 @@ impl State for MainState {
                     }
                 }
                 monsters.push(monster);
+            } else {
+                self.score += 10;
             }
         }
         if self.player.health <= 0 {
@@ -342,6 +382,10 @@ impl State for MainState {
             self.rendered_health = self
                 .font
                 .render(&self.player.health.to_string(), &self.default_style)?;
+            self.rendered_score = self
+                .font
+                .render(&self.score.to_string(), &self.default_style)?;
+            self.is_dead = true;
         } else {
             if self.player.invis_timer > 0 {
                 self.player.invis_timer -= 1;

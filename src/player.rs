@@ -97,7 +97,7 @@ impl Player {
 		grid: &mut Grid,
 		font: &Font,
 		style: &FontStyle,
-	) -> Result<Action> {
+	) -> Result<(u64, Action)> {
 		let board = window.keyboard();
 		if check_multiple(board, &[Key::A]) {
 			self.location
@@ -141,6 +141,7 @@ impl Player {
 				self.selected_gun += 1;
 			}
 		}
+		let mut extra_points = 0;
 		let current = grid.get_cell(self.location.cell_loc);
 		if self.shoot_timer > 0 {
 			self.shoot_timer -= 1;
@@ -149,27 +150,31 @@ impl Player {
 			if current.1.has_gun {
 				if let Some(gun) = grid.get_gun(&self.location.cell_loc, font, style)? {
 					self.guns.push(gun);
+					extra_points += 20;
 				}
 			}
 		}
-		Ok(current
-			.and_then(|(_, tile)| {
-				if tile.is_end {
-					Some(Action::NextScreen)
-				} else {
-					None
-				}
-			})
-			.or_else(|| {
-				if check_multiple(board, &[Key::F, Key::Space]) && self.shoot_timer == 0 {
-					let selected_gun = self.guns[self.selected_gun].clone();
-					self.shoot_timer = selected_gun.cooldown;
-					return Some(Action::Shoot(selected_gun));
-				} else {
-					None
-				}
-			})
-			.unwrap_or(Action::None))
+		Ok((
+			extra_points,
+			current
+				.and_then(|(_, tile)| {
+					if tile.is_end {
+						Some(Action::NextScreen)
+					} else {
+						None
+					}
+				})
+				.or_else(|| {
+					if check_multiple(board, &[Key::F, Key::Space]) && self.shoot_timer == 0 {
+						let selected_gun = self.guns[self.selected_gun].clone();
+						self.shoot_timer = selected_gun.cooldown;
+						return Some(Action::Shoot(selected_gun));
+					} else {
+						None
+					}
+				})
+				.unwrap_or(Action::None),
+		))
 	}
 
 	pub fn get_rectangle(&self) -> Rectangle {
