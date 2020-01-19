@@ -297,11 +297,11 @@ impl State for MainState {
             Transform::IDENTITY,
             z,
         );
-        let mut start = Rectangle::new((25, 65), (13, 13));
+        let mut start = Rectangle::new((25, 65), (20, 20));
         for pattern in &selected_gun.rendered_patterns {
             z = z + 1;
             window.draw_ex(&start, Img(pattern), Transform::IDENTITY, z);
-            start.pos.y += 20.;
+            start.pos.y += 25.;
         }
         Ok(())
     }

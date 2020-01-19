@@ -13,6 +13,7 @@ use quicksilver::{
 };
 
 use rand::distributions::Standard;
+use rand::seq::SliceRandom;
 use rand::Rng;
 
 use rand::distributions::Distribution;
@@ -46,36 +47,50 @@ pub struct Player {
 impl Player {
 	pub fn new(location: Vector, font: &Font, style: &FontStyle) -> Result<Self> {
 		let guns = vec![
-			Gun::new(
-				20,
-				vec![vec![0], vec![0, 1], vec![0, -1]],
-				2,
-				3.,
-				font,
-				style,
-				"Sniper",
-				ShapeChoise::Rectangle,
-			)?,
-			Gun::new(
-				10,
-				vec![vec![0]],
-				10,
-				4.,
-				font,
-				style,
-				"Minigun",
-				ShapeChoise::Triangle,
-			)?,
-			Gun::new(
-				10,
-				vec![vec![-2]],
-				-2,
-				4.,
-				font,
-				style,
-				"Nuke",
-				ShapeChoise::Circle,
-			)?,
+			{
+				let mut rng = rand::thread_rng();
+				let mut patterns = Vec::new();
+				for _ in 1..4 {
+					let mut pattern = Vec::new();
+					for _ in 1..4 {
+						pattern.push(rng.gen_range(0, 4))
+					}
+					patterns.push(pattern)
+				}
+
+				Gun::new(
+					rng.gen_range(15, 25),
+					patterns,
+					rng.gen_range(-5, 5),
+					rng.gen_range(10., 20.),
+					font,
+					style,
+					&get_random_name(),
+					rng.gen(),
+				)?
+			},
+			{
+				let mut rng = rand::thread_rng();
+				let mut patterns = Vec::new();
+				for _ in 1..4 {
+					let mut pattern = Vec::new();
+					for _ in 1..4 {
+						pattern.push(rng.gen_range(0, 4))
+					}
+					patterns.push(pattern)
+				}
+
+				Gun::new(
+					rng.gen_range(15, 25),
+					patterns,
+					rng.gen_range(-5, 5),
+					rng.gen_range(10., 20.),
+					font,
+					style,
+					&get_random_name(),
+					rng.gen(),
+				)?
+			},
 		];
 		Ok(Self {
 			location: Moveable::new(location),
@@ -151,6 +166,9 @@ impl Player {
 				if let Some(gun) = grid.get_gun(&self.location.cell_loc, font, style)? {
 					self.guns.push(gun);
 					extra_points += 20;
+					if self.guns.len() > 4 {
+						self.guns.remove(0);
+					}
 				}
 			}
 		}
@@ -197,6 +215,23 @@ impl Player {
 		(x, y)
 	}
 }
+
+pub fn get_random_name() -> String {
+	let glitch_chars: Vec<char> = vec![
+		'█', '█', '█', '▒', '▒', '░', '█', '█', '▒', '௵', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+		'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'F', 'W', 'X', 'Y', 'Z',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+		's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+		'!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+	];
+	let mut rng = rand::thread_rng();
+	let mut name = Vec::new();
+	for _ in 0..rng.gen_range(5, 8) {
+		name.push(glitch_chars.choose(&mut rng).expect("No chars available"));
+	}
+	name.into_iter().collect()
+}
+
 #[derive(Clone, Debug)]
 pub enum Action {
 	Shoot(Gun),

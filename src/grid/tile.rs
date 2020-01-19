@@ -1,3 +1,4 @@
+use crate::player::get_random_name;
 use crate::player::Gun;
 use quicksilver::graphics::{Font, FontStyle};
 use quicksilver::Result;
@@ -17,9 +18,9 @@ impl Tile {
         }
         let mut rng = rand::thread_rng();
         let mut patterns = Vec::new();
-        for _ in 1..3 {
+        for _ in 1..rng.gen_range(2, 4) {
             let mut pattern = Vec::new();
-            for _ in 1..3 {
+            for _ in 1..rng.gen_range(2, 4) {
                 pattern.push(rng.gen_range(0, 4))
             }
             patterns.push(pattern)
@@ -32,7 +33,7 @@ impl Tile {
             rng.gen_range(10., 20.),
             font,
             style,
-            "New gun",
+            &get_random_name(),
             rng.gen(),
         )?))
     }
