@@ -41,27 +41,36 @@ pub struct Player {
 impl Player {
 	pub fn new(location: Vector, font: &Font, style: &FontStyle) -> Result<Self> {
 		let guns = vec![
-			Gun {
-				rendered_name: font.render("Sniper", style)?,
-				speed: 3.,
-				damage: 2,
-				cooldown: 20,
-				patterns: vec![vec![0], vec![0, 1], vec![0, -1]],
-			},
-			Gun {
-				rendered_name: font.render("Minigun", style)?,
-				speed: 4.,
-				damage: 10,
-				cooldown: 10,
-				patterns: vec![vec![0]],
-			},
-			Gun {
-				rendered_name: font.render("Nuke", style)?,
-				speed: 4.,
-				damage: -2,
-				cooldown: 10,
-				patterns: vec![vec![-2]],
-			},
+			Gun::new(
+				20,
+				vec![vec![0], vec![0, 1], vec![0, -1]],
+				2,
+				3.,
+				font,
+				style,
+				"Sniper",
+				ShapeChoise::Rectangle,
+			)?,
+			Gun::new(
+				10,
+				vec![vec![0]],
+				10,
+				4.,
+				font,
+				style,
+				"Minigun",
+				ShapeChoise::Triangle,
+			)?,
+			Gun::new(
+				10,
+				vec![vec![-2]],
+				-2,
+				4.,
+				font,
+				style,
+				"Nuke",
+				ShapeChoise::Circle,
+			)?,
 		];
 		Ok(Self {
 			location: Moveable::new(location),
@@ -173,9 +182,73 @@ pub enum Action {
 }
 #[derive(Clone, Debug)]
 pub struct Gun {
-	pub rendered_name: Image,
 	pub cooldown: usize,
 	pub patterns: Vec<Vec<i8>>,
 	pub damage: isize,
 	pub speed: f32,
+	pub rendered_name: Image,
+	pub shape: ShapeChoise,
+	pub rendered_patterns: Vec<Image>,
+	pub rendered_damage: Image,
+	pub rendered_cooldown: Image,
+}
+impl Gun {
+	pub fn new(
+		cooldown: usize,
+		patterns: Vec<Vec<i8>>,
+		damage: isize,
+		speed: f32,
+		font: &Font,
+		style: &FontStyle,
+		name: &str,
+		shape: ShapeChoise,
+	) -> Result<Self> {
+		let rendered_name = font.render(name, style)?;
+		let mut rendered_patterns = Vec::new();
+		for pattern in &patterns {
+			let pattern: String = pattern
+				.iter()
+				.map(|v| {
+					if *v < 0 {
+						v + 4
+					} else if *v > 3 {
+						v - 4
+					} else {
+						*v
+					}
+				})
+				.map(|v| {
+					if v == 0 {
+						'F'
+					} else if v == 1 {
+						'R'
+					} else if v == 2 {
+						'B'
+					} else {
+						'L'
+					}
+				})
+				.collect();
+			rendered_patterns.push(font.render(&pattern, style)?);
+		}
+		let rendered_cooldown = font.render(&cooldown.to_string(), style)?;
+		let rendered_damage = font.render(&damage.to_string(), style)?;
+		Ok(Gun {
+			rendered_name,
+			speed,
+			damage,
+			cooldown,
+			patterns,
+			rendered_patterns,
+			rendered_cooldown,
+			rendered_damage,
+			shape,
+		})
+	}
+}
+#[derive(Debug, Clone, Copy)]
+pub enum ShapeChoise {
+	Rectangle,
+	Circle,
+	Triangle,
 }

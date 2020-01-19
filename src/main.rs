@@ -3,10 +3,11 @@ use crate::grid::grid::Grid;
 use crate::monster::Monster;
 use crate::player::Action;
 use crate::player::Player;
+use crate::player::ShapeChoise;
 use quicksilver::graphics::Image;
 use quicksilver::prelude::Background::Img;
 use quicksilver::{
-    geom::{Rectangle, Shape, Transform, Vector},
+    geom::{Circle, Rectangle, Shape, Transform, Triangle, Vector},
     graphics::{Background::Col, Color, Font, FontStyle},
     lifecycle::{run, Event, Settings, State, Window},
     Result,
@@ -222,6 +223,55 @@ impl State for MainState {
             Transform::IDENTITY,
             z,
         );
+        z = z + 1;
+        let selected_gun = &self.player.guns[self.player.selected_gun];
+        match selected_gun.shape {
+            ShapeChoise::Rectangle => window.draw_ex(
+                &Rectangle::new((5, 5), (15, 15)),
+                Col(Color::WHITE),
+                Transform::IDENTITY,
+                z,
+            ),
+            ShapeChoise::Circle => window.draw_ex(
+                &Circle::new((5, 5), 10),
+                Col(Color::WHITE),
+                Transform::IDENTITY,
+                z,
+            ),
+            ShapeChoise::Triangle => window.draw_ex(
+                &Triangle::new((10.5, 5), (15, 15), (5, 15)),
+                Col(Color::WHITE),
+                Transform::IDENTITY,
+                z,
+            ),
+        }
+        z = z + 1;
+        window.draw_ex(
+            &Rectangle::new((25, 5), (30, 20)),
+            Img(&selected_gun.rendered_name),
+            Transform::IDENTITY,
+            z,
+        );
+        z = z + 1;
+        window.draw_ex(
+            &Rectangle::new((25, 25), (20, 20)),
+            Img(&selected_gun.rendered_damage),
+            Transform::IDENTITY,
+            z,
+        );
+        z = z + 1;
+        window.draw_ex(
+            &Rectangle::new((25, 45), (20, 20)),
+            Img(&selected_gun.rendered_cooldown),
+            Transform::IDENTITY,
+            z,
+        );
+        let mut start = Rectangle::new((25, 65), (13, 13));
+        for pattern in &selected_gun.rendered_patterns {
+            z = z + 1;
+            window.draw_ex(&start, Img(pattern), Transform::IDENTITY, z);
+            start.pos.y += 20.;
+        }
         Ok(())
     }
     fn update(&mut self, window: &mut Window) -> Result<()> {
