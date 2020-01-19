@@ -1,4 +1,8 @@
 use crate::grid::{Dir, Tile};
+use crate::player::Gun;
+use quicksilver::graphics::Font;
+use quicksilver::graphics::FontStyle;
+use quicksilver::Result;
 use rand::Rng;
 use std::collections::HashMap;
 
@@ -10,7 +14,7 @@ pub struct Grid {
 }
 
 impl Grid {
-	pub fn new(length: usize, height: usize) -> Self {
+	pub fn new(length: usize, height: usize) -> Result<Self> {
 		let mut grid = Vec::<Tile>::new();
 		let amount = length * height;
 		grid.reserve(amount);
@@ -76,6 +80,7 @@ impl Grid {
 				is_start: key == 0,
 				is_end: is_last,
 				can_move: true,
+				has_gun: rng.gen_range(0, 100) < 2,
 			};
 			path.entry(loc).or_insert(room);
 		}
@@ -86,15 +91,16 @@ impl Grid {
 					is_start: false,
 					is_end: false,
 					can_move: false,
+					has_gun: rng.gen_range(0, 100) < 2,
 				},
 			});
 		}
-		Self {
+		Ok(Self {
 			tiles: grid,
 			length,
 			height,
 			start: player_start,
-		}
+		})
 	}
 	fn calc_cell(point: &(usize, usize), length: usize, height: usize) -> usize {
 		let mut x = point.0;
@@ -149,5 +155,23 @@ impl Grid {
 				v.clone(),
 			)
 		})
+	}
+	pub fn get_gun(
+		&mut self,
+		cell: &(usize, usize),
+		font: &Font,
+		style: &FontStyle,
+	) -> Result<Option<Gun>> {
+		if cell.0 > self.length - 1 || cell.1 > self.height - 1 {
+			return Ok(None);
+		}
+		let index = Grid::calc_cell_unbound(&cell, self.length, self.height);
+		if let Some(tile) = self.tiles.get_mut(index) {
+			let gun = tile.get_gun(font, style);
+			tile.has_gun = false;
+			gun
+		} else {
+			Ok(None)
+		}
 	}
 }

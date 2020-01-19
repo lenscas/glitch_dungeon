@@ -12,6 +12,11 @@ use quicksilver::{
 	{input::ButtonState, input::Keyboard, prelude::Key},
 };
 
+use rand::distributions::Standard;
+use rand::Rng;
+
+use rand::distributions::Distribution;
+
 pub fn check_multiple(board: &Keyboard, to_check: &[Key]) -> bool {
 	to_check
 		.iter()
@@ -86,7 +91,13 @@ impl Player {
 	pub fn reset_location(&mut self, location: Vector) {
 		self.location.reset_location(location);
 	}
-	pub fn update(&mut self, window: &Window, grid: &Grid) -> Action {
+	pub fn update(
+		&mut self,
+		window: &Window,
+		grid: &mut Grid,
+		font: &Font,
+		style: &FontStyle,
+	) -> Result<Action> {
 		let board = window.keyboard();
 		if check_multiple(board, &[Key::A]) {
 			self.location
@@ -134,7 +145,14 @@ impl Player {
 		if self.shoot_timer > 0 {
 			self.shoot_timer -= 1;
 		}
-		current
+		if let Some(current) = &current {
+			if current.1.has_gun {
+				if let Some(gun) = grid.get_gun(&self.location.cell_loc, font, style)? {
+					self.guns.push(gun);
+				}
+			}
+		}
+		Ok(current
 			.and_then(|(_, tile)| {
 				if tile.is_end {
 					Some(Action::NextScreen)
@@ -151,7 +169,7 @@ impl Player {
 					None
 				}
 			})
-			.unwrap_or(Action::None)
+			.unwrap_or(Action::None))
 	}
 
 	pub fn get_rectangle(&self) -> Rectangle {
@@ -251,4 +269,18 @@ pub enum ShapeChoise {
 	Rectangle,
 	Circle,
 	Triangle,
+}
+impl Distribution<ShapeChoise> for Standard {
+	fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> ShapeChoise {
+		rng.gen_range(0, 3).into()
+	}
+}
+impl From<u8> for ShapeChoise {
+	fn from(v: u8) -> ShapeChoise {
+		match v {
+			0 => ShapeChoise::Rectangle,
+			1 => ShapeChoise::Circle,
+			_ => ShapeChoise::Triangle,
+		}
+	}
 }

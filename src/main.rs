@@ -74,7 +74,7 @@ impl MainState {
         ((start_x, start_y), (end_x, end_y))
     }
     pub fn reset(&mut self) -> Result<()> {
-        self.grid = Grid::new(GRID_SIZE, GRID_SIZE);
+        self.grid = Grid::new(GRID_SIZE, GRID_SIZE)?;
         self.bullets = Vec::new();
         let start = self.grid.start;
         self.player.reset_location(Vector::new(
@@ -111,7 +111,7 @@ impl State for MainState {
         let font = Font::from_bytes(include_bytes!("../static/font.ttf").to_vec())?;
         let style = FontStyle::new(100.0, Color::WHITE);
 
-        let grid = Grid::new(GRID_SIZE, GRID_SIZE);
+        let grid = Grid::new(GRID_SIZE, GRID_SIZE)?;
         let start = grid.start;
         let loc = Vector::new((start.0 * CELL_SIZE) as i32, (start.1 * CELL_SIZE) as i32);
         let possible_spawns: Vec<_> = grid
@@ -152,7 +152,9 @@ impl State for MainState {
         let mut z = 0;
         part.into_iter().for_each(|(loc2, tile)| {
             let loc = self.player.grid_to_screen(&(loc2.0 as f32, loc2.1 as f32));
-            let to_draw = if tile.can_move {
+            let to_draw = if tile.has_gun {
+                Color::YELLOW
+            } else if tile.can_move {
                 if tile.is_start {
                     Color::PURPLE
                 } else if tile.is_end {
@@ -275,7 +277,9 @@ impl State for MainState {
         Ok(())
     }
     fn update(&mut self, window: &mut Window) -> Result<()> {
-        let action = self.player.update(window, &self.grid);
+        let action = self
+            .player
+            .update(window, &mut self.grid, &self.font, &self.default_style)?;
         match action {
             Action::None => {}
             Action::NextScreen => self.reset()?,
