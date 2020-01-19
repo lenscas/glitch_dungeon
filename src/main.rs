@@ -38,6 +38,8 @@ pub struct MainState {
     rendered_score: Image,
     is_dead: bool,
     rendered_dead_text: Image,
+    is_at_main: bool,
+    rendered_main: Image,
 }
 impl MainState {
     fn calc_start(cam: f32, line_size: usize) -> usize {
@@ -144,7 +146,7 @@ impl State for MainState {
         let rendered_score = font.render("0", &style)?;
         let rendered_dead_text =
             font.render("You died, press Esc to continue\nYour score:", &style)?;
-
+        let rendered_main = Image::from_bytes(include_bytes!("../static/start.png"))?;
         Ok(Self {
             grid,
             player,
@@ -157,10 +159,19 @@ impl State for MainState {
             is_dead: false,
             score: 0,
             rendered_dead_text,
+            is_at_main: true,
+            rendered_main,
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::BLACK)?;
+        if self.is_at_main {
+            window.draw(
+                &Rectangle::new((0, 0), (800, 600)),
+                Img(&self.rendered_main),
+            );
+            return Ok(());
+        }
         if self.is_dead {
             window.draw_ex(
                 &Rectangle::new((200, 150), (380, 200)),
@@ -306,6 +317,13 @@ impl State for MainState {
         Ok(())
     }
     fn update(&mut self, window: &mut Window) -> Result<()> {
+        if self.is_at_main {
+            let board = window.keyboard();
+            if check_multiple_pressed(&board, &[Key::Escape, Key::Return]) {
+                self.is_at_main = false;
+            }
+            return Ok(());
+        }
         if self.is_dead {
             let board = window.keyboard();
             if check_multiple_pressed(&board, &[Key::Escape, Key::Return]) {
