@@ -261,7 +261,7 @@ impl Gun {
 		name: &str,
 		shape: ShapeChoise,
 	) -> Result<Self> {
-		let rendered_name = font.render(name, style)?;
+		let rendered_name = font.render(&format!("Name: {:0}", name), style)?;
 		let mut rendered_patterns = Vec::new();
 		for pattern in &patterns {
 			let pattern: String = pattern
@@ -289,8 +289,8 @@ impl Gun {
 				.collect();
 			rendered_patterns.push(font.render(&pattern, style)?);
 		}
-		let rendered_cooldown = font.render(&cooldown.to_string(), style)?;
-		let rendered_damage = font.render(&damage.to_string(), style)?;
+		let rendered_cooldown = font.render(&format!("Cooldown: {:0}", &cooldown), style)?;
+		let rendered_damage = font.render(&format!("Damage: {:0}", damage), style)?;
 		Ok(Gun {
 			rendered_name,
 			speed,
