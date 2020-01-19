@@ -143,6 +143,9 @@ impl Grid {
 			.collect()
 	}
 	pub fn get_cell(&self, cell: (usize, usize)) -> Option<((usize, usize), Tile)> {
+		if cell.0 > self.length - 1 || cell.1 > self.height - 1 {
+			return None;
+		}
 		let index = Grid::calc_cell_unbound(&cell, self.length, self.height);
 		self.tiles.get(index).map(|v| {
 			(
