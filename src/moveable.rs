@@ -52,8 +52,8 @@ impl Moveable {
         match dir {
             Dir::Left => {
                 let new_loc = Vector::new(sub_save(self.location.x, speed), self.location.y);
-                if ((new_loc.x - half_moveable_size) / CELL_SIZE as f32).floor() as usize
-                    != self.cell_loc.0
+                if ((new_loc.x - half_moveable_size) / CELL_SIZE as f32).floor() as isize
+                    != self.cell_loc.0 as isize
                 {
                     if self.cell_loc.0 != 0 {
                         let next_cell = grid.get_cell((self.cell_loc.0 - 1, self.cell_loc.1));
@@ -104,8 +104,8 @@ impl Moveable {
             }
             Dir::Up => {
                 let new_loc = Vector::new(self.location.x, sub_save(self.location.y, speed));
-                if ((new_loc.y - half_moveable_size) / CELL_SIZE as f32).floor() as usize
-                    != self.cell_loc.1
+                if ((new_loc.y - half_moveable_size) / CELL_SIZE as f32).floor() as isize
+                    != self.cell_loc.1 as isize
                 {
                     if self.cell_loc.1 != 0 {
                         let next_cell = grid.get_cell((self.cell_loc.0, self.cell_loc.1 - 1));
@@ -133,7 +133,7 @@ impl Moveable {
             Dir::Down => {
                 let new_loc = Vector::new(self.location.x, self.location.y + speed);
                 if ((new_loc.y + half_moveable_size) / CELL_SIZE as f32).floor() as usize
-                    != self.cell_loc.1
+                    != self.cell_loc.1 as usize
                 {
                     let next_cell = grid.get_cell((self.cell_loc.0, self.cell_loc.1 + 1));
                     match next_cell {

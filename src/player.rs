@@ -60,9 +60,9 @@ impl Player {
 
 				Gun::new(
 					rng.gen_range(15, 25),
-					patterns,
+					vec![vec![0, 0, 1]],
 					rng.gen_range(-5, 5),
-					rng.gen_range(10., 20.),
+					20., //rng.gen_range(10., 20.),
 					font,
 					style,
 					&get_random_name(),

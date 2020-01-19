@@ -50,7 +50,7 @@ impl Bullet {
 				.move_some(*dir, self.speed, grid, self.size)
 				.is_some();
 			if hit {
-				return hit;
+				return true;
 			}
 		}
 		false
