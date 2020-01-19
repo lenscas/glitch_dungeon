@@ -24,7 +24,6 @@ impl Grid {
 		let mut path = Vec::<(usize, usize)>::new();
 		path.push((player_start.0, player_start.1));
 		loop {
-			let _next: Dir = rng.gen();
 			let at = path.last().unwrap();
 			if *at == exit {
 				break;
@@ -70,22 +69,22 @@ impl Grid {
 				}
 			}
 		}
-
 		let mut iter = path.iter().enumerate().peekable();
-		let mut path = HashMap::new();
+		let mut path2 = HashMap::new();
 		while let Some((key, v)) = iter.next() {
 			let loc = Grid::calc_cell(v, length, height);
-			let is_last = iter.peek().is_none();
+			let next = iter.peek();
+			let is_last = next.is_none();
 			let room = Tile {
 				is_start: key == 0,
 				is_end: is_last,
 				can_move: true,
 				has_gun: rng.gen_range(0, 100) < 2,
 			};
-			path.entry(loc).or_insert(room);
+			path2.insert(loc, room);
 		}
 		for v in 0..length * height {
-			grid.push(match path.remove(&v) {
+			grid.push(match path2.remove(&v) {
 				Some(x) => x,
 				None => Tile {
 					is_start: false,

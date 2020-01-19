@@ -29,7 +29,7 @@ impl Tile {
         Ok(Some(Gun::new(
             rng.gen_range(15, 25),
             patterns,
-            rng.gen_range(-5, 5),
+            rng.gen_range(-10, 10),
             rng.gen_range(10., 20.),
             font,
             style,

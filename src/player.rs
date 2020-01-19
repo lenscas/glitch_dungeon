@@ -60,8 +60,8 @@ impl Player {
 
 				Gun::new(
 					rng.gen_range(15, 25),
-					vec![vec![0, 0, 1]],
-					rng.gen_range(-5, 5),
+					patterns,
+					rng.gen_range(-7, 7),
 					20., //rng.gen_range(10., 20.),
 					font,
 					style,
@@ -83,7 +83,7 @@ impl Player {
 				Gun::new(
 					rng.gen_range(15, 25),
 					patterns,
-					rng.gen_range(-5, 5),
+					rng.gen_range(-7, 7),
 					rng.gen_range(10., 20.),
 					font,
 					style,

@@ -39,6 +39,7 @@ pub struct MainState {
     rendered_dead_text: Image,
     is_at_main: bool,
     rendered_main: Image,
+    rendered_pattern_reminder: Image,
 }
 impl MainState {
     fn calc_start(cam: f32, line_size: usize) -> usize {
@@ -128,7 +129,7 @@ impl State for MainState {
             .filter(|(_, v)| v.can_move && !v.is_start)
             .map(|(key, _)| Grid::calc_pos_from_index(key, grid.length, grid.height))
             .collect();
-        let amount = possible_spawns.len() / 20;
+        let amount = possible_spawns.len() / 30;
         let mut monsters = Vec::new();
         let mut rng = rand::thread_rng();
         for _ in 0..amount {
@@ -146,6 +147,7 @@ impl State for MainState {
         let rendered_dead_text =
             font.render("You died, press Esc to continue\nYour score:", &style)?;
         let rendered_main = Image::from_bytes(include_bytes!("../static/start.png"))?;
+        let rendered_pattern_reminder = font.render("Patterns", &style)?;
         Ok(Self {
             grid,
             player,
@@ -160,6 +162,7 @@ impl State for MainState {
             rendered_dead_text,
             is_at_main: true,
             rendered_main,
+            rendered_pattern_reminder,
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
@@ -287,7 +290,14 @@ impl State for MainState {
             Transform::IDENTITY,
             z,
         );
-        let mut start = Rectangle::new((5, 65), (20, 20));
+        z = z + 1;
+        window.draw_ex(
+            &Rectangle::new((5, 65), (70, 20)),
+            Img(&self.rendered_pattern_reminder),
+            Transform::IDENTITY,
+            z,
+        );
+        let mut start = Rectangle::new((5, 85), (20, 20));
         for pattern in &selected_gun.rendered_patterns {
             z = z + 1;
             window.draw_ex(&start, Img(pattern), Transform::IDENTITY, z);

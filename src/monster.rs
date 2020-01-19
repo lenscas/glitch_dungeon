@@ -22,13 +22,13 @@ pub struct Monster {
 impl Monster {
 	pub fn new(location: Vector, font: &Font, style: &FontStyle) -> Result<Self> {
 		let mut rng = rand::thread_rng();
-		let health = rng.gen_range(-25, 25);
+		let health = rng.gen_range(-10, 10);
 		let rendered_health = font.render(&health.to_string(), style)?;
 		Ok(Self {
 			location: Moveable::new(location),
 			size: 15,
 			health,
-			damage: 10,
+			damage: 5,
 			speed: 5.,
 			started_negative: health < 0,
 			rendered_health,
@@ -61,9 +61,23 @@ impl Monster {
 		if self.damage_cooldown > 0 {
 			return Ok(self.is_alive());
 		}
-		self.damage_cooldown = 20;
-		self.health -= damage;
-		self.rendered_health = font.render(&self.health.to_string(), style)?;
+		if (!self.started_negative) && damage < 0 {
+			if self.health - damage < 12 {
+				self.health -= damage;
+				self.damage_cooldown = 20;
+				self.rendered_health = font.render(&self.health.to_string(), style)?;
+			}
+		} else if self.started_negative && damage > 0 {
+			if self.health - damage > -12 {
+				self.health -= damage;
+				self.damage_cooldown = 20;
+				self.rendered_health = font.render(&self.health.to_string(), style)?;
+			}
+		} else {
+			self.health -= damage;
+			self.damage_cooldown = 20;
+			self.rendered_health = font.render(&self.health.to_string(), style)?;
+		}
 		Ok(self.is_alive())
 	}
 	pub fn is_alive(&self) -> bool {
