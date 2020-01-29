@@ -13,6 +13,8 @@ use quicksilver::{
     Result,
 };
 use rand::seq::SliceRandom;
+use screens::screen::Screen;
+use screens::start::StartScreen;
 
 const CELL_SIZE: usize = 32;
 const PLAYER_SIZE: usize = 16;
@@ -25,6 +27,7 @@ mod gun;
 mod monster;
 mod moveable;
 mod player;
+mod screens;
 
 pub fn calc_start(cam: f32, line_size: usize) -> usize {
     let cam = cam.floor() as usize;
@@ -42,6 +45,7 @@ pub fn calc_start(cam: f32, line_size: usize) -> usize {
 }
 
 pub struct MainState {
+    screen: Box<dyn Screen>,
     state: game_state::GameState,
     font: Font,
     default_style: FontStyle,
@@ -49,7 +53,7 @@ pub struct MainState {
     is_dead: bool,
     rendered_dead_text: Image,
     is_at_main: bool,
-    rendered_main: Image,
+
     _rendered_pattern_reminder: Image,
 }
 impl MainState {
@@ -107,9 +111,11 @@ impl State for MainState {
         let rendered_score = font.render("0", &style)?;
         let rendered_dead_text =
             font.render("You died, press Esc to continue\nYour score:", &style)?;
-        let rendered_main = Image::from_bytes(include_bytes!("../static/start.png"))?;
+
+        let screen = Box::new(StartScreen::new()?);
         let rendered_pattern_reminder = font.render("Patterns", &style)?;
         Ok(Self {
+            screen,
             state: game_state::GameState::new(player, 0, &font, &style)?,
             font,
             default_style: style,
@@ -117,19 +123,11 @@ impl State for MainState {
             is_dead: false,
             rendered_dead_text,
             is_at_main: true,
-            rendered_main,
             _rendered_pattern_reminder: rendered_pattern_reminder,
         })
     }
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::BLACK)?;
-        if self.is_at_main {
-            window.draw(
-                &Rectangle::new((0, 0), (800, 600)),
-                Img(&self.rendered_main),
-            );
-            return Ok(());
-        }
         if self.is_dead {
             window.draw_ex(
                 &Rectangle::new((200, 150), (380, 200)),
