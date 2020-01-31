@@ -7,6 +7,7 @@ use quicksilver::lifecycle::Window;
 use quicksilver::prelude::Img;
 use quicksilver::Result;
 
+use super::in_game::InGameScreen;
 use crate::player::check_multiple_pressed;
 use quicksilver::input::Key;
 pub struct StartScreen {
@@ -21,12 +22,20 @@ impl StartScreen {
 }
 
 impl Screen for StartScreen {
-    fn update(&mut self, window: &mut Window, font: &Font, style: &FontStyle) -> Result<()> {
+    fn update(
+        &mut self,
+        window: &mut Window,
+        font: &Font,
+        style: &FontStyle,
+    ) -> Result<Option<Box<dyn Screen>>> {
         let board = window.keyboard();
-        if check_multiple_pressed(&board, &[Key::Escape, Key::Return]) {}
-        unimplemented!()
+        if check_multiple_pressed(&board, &[Key::Escape, Key::Return]) {
+            return Ok(Some(Box::new(InGameScreen::new(font, style)?)));
+        }
+        Ok(None)
     }
-    fn draw(&self, window: &mut Window, font: &Font, style: &FontStyle) -> Result<()> {
+
+    fn draw(&self, window: &mut Window, _: &Font, _: &FontStyle) -> Result<()> {
         window.draw(
             &Rectangle::new((0, 0), (800, 600)),
             Img(&self.rendered_main),

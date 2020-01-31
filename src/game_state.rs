@@ -20,7 +20,7 @@ pub struct GameState {
     pub score: u64,
 }
 impl GameState {
-    pub fn new(mut player: Player, score: u64, font: &Font, style: &FontStyle) -> Result<Self> {
+    fn basic_setup(font: &Font, style: &FontStyle) -> Result<(Grid, Vec<Monster>)> {
         let grid = Grid::new(GRID_SIZE, GRID_SIZE)?;
         let mut monsters = Vec::new();
         let mut rng = rand::thread_rng();
@@ -40,20 +40,37 @@ impl GameState {
                 style,
             )?);
         }
-        let start = grid.start;
-        player.reset_location(Vector::new(
-            (start.0 * CELL_SIZE) as i32,
-            (start.1 * CELL_SIZE) as i32,
-        ));
+        Ok((grid, monsters))
+    }
 
+    pub fn new(font: &Font, style: &FontStyle) -> Result<Self> {
+        let (grid, monsters) = Self::basic_setup(font, style)?;
+        let start = grid.start;
+        let mut player = Player::new(start, &font, &style)?;
         player.invis_timer = 30;
         Ok(Self {
             grid,
             player,
             monsters,
             bullets: Vec::new(),
-            score,
+            score: 0,
         })
+    }
+
+    pub fn reset(&mut self, font: &Font, style: &FontStyle) -> Result<()> {
+        let (grid, monsters) = Self::basic_setup(font, style)?;
+        self.grid = grid;
+        self.monsters = monsters;
+
+        let start = self.grid.start;
+        self.player.reset_location(Vector::new(
+            (start.0 * CELL_SIZE) as i32,
+            (start.1 * CELL_SIZE) as i32,
+        ));
+
+        self.player.invis_timer = 30;
+        self.bullets = Vec::new();
+        Ok(())
     }
 
     pub fn draw(&self, window: &mut Window) {
@@ -74,6 +91,7 @@ impl GameState {
         });
         self.player.draw(window, z);
     }
+
     pub fn update(
         &mut self,
         window: &mut Window,
@@ -84,7 +102,7 @@ impl GameState {
         self.score += points;
         match action {
             Action::None => {}
-            Action::NextScreen => return Ok(StateAction::Reset),
+            Action::NextScreen => return Ok(StateAction::NextLevel),
             Action::Shoot(gun) => {
                 let speed = gun.speed;
                 let damage = gun.damage;
@@ -154,7 +172,7 @@ impl GameState {
     }
 }
 pub enum StateAction {
-    Reset,
+    NextLevel,
     Die,
     None,
 }
